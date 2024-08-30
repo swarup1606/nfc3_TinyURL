@@ -19,23 +19,7 @@ def get_weather_data(city):
     base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     response = requests.get(base_url)
     data = response.json()
-
-    if data.get('cod') != 200:
-        st.error(f"Error retrieving weather data for {city}: {data.get('message')}")
-        return None
-    
-    temperature = data['main']['temp']
-    humidity = data['main']['humidity']
-    precipitation = data.get('rain', {}).get('1h', 0)
-    wind_speed = data['wind']['speed']
-    
-    st.write(f"Temperature: {temperature}°C / तापमान: {temperature}°C")
-    st.write(f"Humidity: {humidity}% / आर्द्रता: {humidity}%")
-    st.write(f"Precipitation: {precipitation} mm / वर्षा: {precipitation} मिमी")
-    st.write(f"Wind Speed: {wind_speed} m/s / पवन की गति: {wind_speed} मी/से")
-
     return data
-
 
 # Function to load CSV data
 def load_data():
@@ -44,7 +28,7 @@ def load_data():
         crop_production_data = pd.read_csv("crop_production_data.csv")
         return soil_data, crop_production_data
     except Exception as e:
-        st.error(f"Error loading data: {e} / डेटा लोड करने में त्रुटि: {e}")
+        st.error(f"Error loading data: {e}")
         return None, None
 
 # Function to analyze soil health
@@ -87,20 +71,20 @@ def train_crop_recommendation_model(soil_data, crop_production_data):
 
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    st.write(f"Model Accuracy: {accuracy * 100:.2f}% / मॉडल की सटीकता: {accuracy * 100:.2f}%")
+    st.write(f"Model Accuracy: {accuracy * 100:.2f}%")
 
     joblib.dump(model, "crop_recommendation_model.pkl")
-    st.write("Crop recommendation model trained and saved. / फसल सिफारिश मॉडल प्रशिक्षित और सहेजा गया।")
+    st.write("Crop recommendation model trained and saved.")
     return model
 
 # Function to load the trained crop recommendation model
 def load_crop_recommendation_model():
     try:
         model = joblib.load("crop_recommendation_model.pkl")
-        st.write("Crop recommendation model loaded successfully. / फसल सिफारिश मॉडल सफलतापूर्वक लोड किया गया।")
+        st.write("Crop recommendation model loaded successfully.")
         return model
     except FileNotFoundError:
-        st.write("No trained crop recommendation model found. Train a new model first. / कोई प्रशिक्षित फसल सिफारिश मॉडल नहीं मिला। पहले एक नया मॉडल प्रशिक्षित करें।")
+        st.write("No trained crop recommendation model found. Train a new model first.")
         return None
 
 # Function to recommend crops based on soil data using the trained model
@@ -127,17 +111,17 @@ def train_irrigation_model():
     model.fit(X, y)
 
     joblib.dump(model, "irrigation_model.pkl")
-    st.write("Irrigation model trained and saved. / सिंचाई मॉडल प्रशिक्षित और सहेजा गया।")
+    st.write("Irrigation model trained and saved.")
     return model
 
 # Function to load the irrigation model
 def load_irrigation_model():
     try:
         model = joblib.load("irrigation_model.pkl")
-        st.write("Irrigation model loaded successfully. / सिंचाई मॉडल सफलतापूर्वक लोड किया गया।")
+        st.write("Irrigation model loaded successfully.")
         return model
     except FileNotFoundError:
-        st.write("No trained irrigation model found. Train a new model first. / कोई प्रशिक्षित सिंचाई मॉडल नहीं मिला। पहले एक नया मॉडल प्रशिक्षित करें।")
+        st.write("No trained irrigation model found. Train a new model first.")
         return None
 
 # Function for irrigation management with predictive analytics
@@ -152,15 +136,15 @@ def irrigation_management(weather_data, soil_moisture):
         prediction = model.predict([[temp, humidity, precipitation]])
         predicted_soil_moisture = prediction[0]
 
-        st.write(f"Current Soil Moisture: {soil_moisture}% / वर्तमान मिट्टी की नमी: {soil_moisture}%")
-        st.write(f"Predicted Soil Moisture: {predicted_soil_moisture:.2f}% / भविष्यवाणी की गई मिट्टी की नमी: {predicted_soil_moisture:.2f}%")
+        st.write(f"Current Soil Moisture: {soil_moisture}%")
+        st.write(f"Predicted Soil Moisture: {predicted_soil_moisture:.2f}%")
 
         if soil_moisture < predicted_soil_moisture:
-            st.write("Irrigation needed to reach optimal soil moisture levels. / आदर्श मिट्टी की नमी स्तर तक पहुंचने के लिए सिंचाई की आवश्यकता है।")
+            st.write("Irrigation needed to reach optimal soil moisture levels.")
         else:
-            st.write("Soil moisture is sufficient; no irrigation needed. / मिट्टी की नमी पर्याप्त है; कोई सिंचाई की आवश्यकता नहीं है।")
+            st.write("Soil moisture is sufficient; no irrigation needed.")
     else:
-        st.write("Unable to perform irrigation management without a trained model. / प्रशिक्षित मॉडल के बिना सिंचाई प्रबंधन नहीं किया जा सकता।")
+        st.write("Unable to perform irrigation management without a trained model.")
 
 # Function to create a simple CNN model
 def create_cnn_model():
@@ -176,118 +160,191 @@ def create_cnn_model():
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
-# Function to load the CNN model for crop health monitoring
-def load_cnn_model():
-    try:
-        model = load_model("crop_health_model.h5")
-        st.write("Crop health CNN model loaded successfully. / फसल स्वास्थ्य CNN मॉडल सफलतापूर्वक लोड किया गया।")
-        return model
-    except FileNotFoundError:
-        st.write("No trained crop health model found. Train a new model first. / कोई प्रशिक्षित फसल स्वास्थ्य मॉडल नहीं मिला। पहले एक नया मॉडल प्रशिक्षित करें।")
-        return None
-
-# Function to predict crop health
-def predict_crop_health(cnn_model, image):
-    image = cv2.resize(image, (64, 64))
-    image = image.astype('float32') / 255
-    image = np.expand_dims(image, axis=0)
-    prediction = cnn_model.predict(image)
-    return prediction
-
-# Function to get advice based on problem headings
-def get_advice_for_heading(heading):
-    advice = {
-        'Pest Infestation': "Regularly inspect plants for pests and use appropriate pesticides. / पौधों की नियमित जांच करें और उचित कीटनाशक का उपयोग करें।",
-        'Nutrient Deficiency': "Apply a balanced fertilizer to address nutrient deficiencies. / पोषक तत्वों की कमी को दूर करने के लिए एक संतुलित उर्वरक का उपयोग करें।",
-        'Watering Issues': "Ensure plants receive adequate water based on weather conditions. / सुनिश्चित करें कि पौधों को मौसम की परिस्थितियों के आधार पर पर्याप्त पानी मिले।",
-        'Soil Quality': "Improve soil quality by adding organic matter and adjusting pH levels. / मिट्टी की गुणवत्ता को बेहतर बनाने के लिए जैविक पदार्थ जोड़ें और pH स्तर को समायोजित करें।",
-        'Crop Diseases': "Identify and treat crop diseases promptly with suitable methods. / फसल की बीमारियों की पहचान करें और उपयुक्त विधियों से तुरंत उपचार करें।"
-    }
-    return advice.get(heading, "No advice available for this issue. / इस समस्या के लिए कोई सलाह उपलब्ध नहीं है।")
-
-# Streamlit app
-def main():
-    st.title("AI-Powered Smart Agriculture Assistant")
-    st.sidebar.title("Features")
-
-    features = ["Home / घर", "Weather Forecast / मौसम पूर्वानुमान", "Soil Health Analysis / मिट्टी स्वास्थ्य विश्लेषण", 
-                "Crop Recommendation / फसल सिफारिश", "Irrigation Management / सिंचाई प्रबंधन", 
-                "Crop Health Monitoring / फसल स्वास्थ्य निगरानी", "Article Advice / लेख सलाह"]
+# Function to train a simple CNN model on synthetic data (placeholder)
+def train_placeholder_model():
+    model = create_cnn_model()
     
-    selection = st.sidebar.radio("Select a feature / एक सुविधा चुनें", features)
+    X_train = np.random.rand(100, 64, 64, 3)  # 100 samples, 64x64 images, 3 channels (RGB)
+    y_train = np.random.randint(2, size=100)  # Binary classification (0 or 1)
+    y_train = to_categorical(y_train)  # One-hot encode labels
 
-    if selection == "Home / घर":
-        st.header("Welcome to the Smart Agriculture Assistant \n स्मार्ट कृषि सहायक में आपका स्वागत है")
-        st.write("This application helps farmers optimize crop yield through various AI-powered features.\n  \nयह एप्लिकेशन किसानों को विभिन्न एआई-संचालित सुविधाओं के माध्यम से फसल उत्पादन को अनुकूलित करने में मदद करता है।")
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+    
+    model.fit(X_train, y_train, epochs=10, validation_data=(X_val, y_val))
+    model.save('crop_health_model.h5')
+    return model
 
-    elif selection == "Weather Forecast / मौसम पूर्वानुमान":
-        city = st.text_input("Enter city name / शहर का नाम दर्ज करें")
-        if st.button("Get Weather / मौसम प्राप्त करें"):
-            if city:
-                data = get_weather_data(city)
-                st.write(data)
-            else:
-                st.write("Please enter a city name. / कृपया एक शहर का नाम दर्ज करें।")
+# Function to preprocess the image
+def preprocess_image(image_path):
+    image = cv2.imread(image_path)
+    if image is None:
+        st.error("Error loading image. Please check the file path.")
+        return None
+    image = cv2.resize(image, (64, 64))  # Resize to model input size
+    image = np.expand_dims(image, axis=0)  # Add batch dimension
+    image = image / 255.0  # Normalize pixel values
+    return image
 
-    elif selection == "Soil Health Analysis / मिट्टी स्वास्थ्य विश्लेषण":
-        st.header("Soil Health Analysis / मिट्टी स्वास्थ्य विश्लेषण")
-        pH = st.number_input("Enter pH level / pH स्तर दर्ज करें")
-        nitrogen = st.number_input("Enter Nitrogen content (kg/ha) / नाइट्रोजन सामग्री (किलोग्राम/हेक्टेयर) दर्ज करें")
-        phosphorus = st.number_input("Enter Phosphorus content (kg/ha) / फास्फोरस सामग्री (किलोग्राम/हेक्टेयर) दर्ज करें")
-        potassium = st.number_input("Enter Potassium content (kg/ha) / पोटेशियम सामग्री (किलोग्राम/हेक्टेयर) दर्ज करें")
-        organic_matter = st.number_input("Enter Organic Matter (%) / कार्बनिक पदार्थ (%) दर्ज करें")
+# Function to predict crop health using the model
+def predict_crop_health(model, image_path):
+    image = preprocess_image(image_path)
+    if image is not None:
+        predictions = model.predict(image)
+        predicted_class = np.argmax(predictions)
+        return "Healthy" if predicted_class == 0 else "Unhealthy"
+    return None
+import streamlit as st
+
+# Function to add custom CSS
+def add_custom_css():
+    st.markdown("""
+        <style>
+        .main {
+            background-color: #000000; /* Black background for the main content */
+            color: #ffffff; /* White text color */
+        }
+        .sidebar .sidebar-content {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ffffff; /* White text color */
+        }
+        .css-1d391kg {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #ffffff; /* White text color */
+        }
+        .stButton>button {
+            background-color: #f39c12;
+            color: white;
+            border-radius: 5px;
+            border: none;
+        }
+        .stButton>button:hover {
+            background-color: #e67e22;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Streamlit UI
+def main():
+    add_custom_css()
+
+    st.title("AI-Based Smart Agriculture Assistant")
+
+    # Sidebar menu for navigation
+    menu = ["Home", "Soil Health Analysis", "Weather Forecasting", "Crop Recommendation", "Irrigation Management", "Crop Health Monitoring"]
+    choice = st.sidebar.selectbox("Select Feature", menu)
+
+    if choice == "Home":
+        st.subheader("Welcome to the AI-Based Smart Agriculture Assistant")
+        st.write("This system helps farmers optimize crop yield by analyzing soil conditions, weather patterns, and crop health monitoring.")
+
+    elif choice == "Soil Health Analysis":
+        st.subheader("Soil Health Analysis")
+        st.write("Enter the soil parameters below to analyze the soil health:")
+        pH = st.number_input("pH level", min_value=0.0, max_value=14.0, value=7.0)
+        nitrogen = st.number_input("Nitrogen Content (kg/ha)", min_value=0.0, value=20.0)
+        phosphorus = st.number_input("Phosphorus Content (kg/ha)", min_value=0.0, value=15.0)
+        potassium = st.number_input("Potassium Content (kg/ha)", min_value=0.0, value=15.0)
+        organic_matter = st.number_input("Organic Matter (%)", min_value=0.0, max_value=100.0, value=5.0)
         
-        if st.button("Analyze Soil Health / मिट्टी के स्वास्थ्य का विश्लेषण करें"):
-            health = analyze_soil_health(pH, nitrogen, phosphorus, potassium, organic_matter)
-            st.write(health)
+        if st.button("Analyze Soil Health"):
+            health_status = analyze_soil_health(pH, nitrogen, phosphorus, potassium, organic_matter)
+            st.write("Soil Health Status:")
+            st.json(health_status)
 
-    elif selection == "Crop Recommendation / फसल सिफारिश":
+    elif choice == "Weather Forecasting":
+        st.subheader("Weather Forecasting")
+        city = st.text_input("Enter city name", "London")
+        if st.button("Get Weather Data"):
+            weather_data = get_weather_data(city)
+            if weather_data:
+                st.write("Weather data:")
+                temperature = weather_data['main']['temp']
+                humidity = weather_data['main']['humidity']
+                weather_description = weather_data['weather'][0]['description'].capitalize()
+                wind_speed = weather_data['wind']['speed']
+                pressure = weather_data['main']['pressure']
+
+                st.write(f"City: {city}")
+                st.write(f"Temperature: {temperature}°C")
+                st.write(f"Humidity: {humidity}%")
+                st.write(f"Weather Description: {weather_description}")
+                st.write(f"Wind Speed: {wind_speed} m/s")
+                st.write(f"Pressure: {pressure} hPa")
+            else:
+                st.write("Failed to retrieve weather data.")
+
+    elif choice == "Crop Recommendation":
+        st.subheader("Crop Recommendation")
+        st.write("Load soil and crop production data to train the model and get recommendations:")
         soil_data, crop_production_data = load_data()
+        
         if soil_data is not None and crop_production_data is not None:
-            model = load_crop_recommendation_model()
-            if model is None:
+            st.write("Soil and crop production data loaded successfully.")
+            if st.button("Train Crop Recommendation Model"):
                 model = train_crop_recommendation_model(soil_data, crop_production_data)
-            pH = st.number_input("Enter pH level / pH स्तर दर्ज करें")
-            nitrogen = st.number_input("Enter Nitrogen content (kg/ha) / नाइट्रोजन सामग्री (किलोग्राम/हेक्टेयर) दर्ज करें")
-            phosphorus = st.number_input("Enter Phosphorus content (kg/ha) / फास्फोरस सामग्री (किलोग्राम/हेक्टेयर) दर्ज करें")
-            potassium = st.number_input("Enter Potassium content (kg/ha) / पोटेशियम सामग्री (किलोग्राम/हेक्टेयर) दर्ज करें")
-            organic_matter = st.number_input("Enter Organic Matter (%) / कार्बनिक पदार्थ (%) दर्ज करें")
+                st.write("Crop recommendation model trained.")
             
-            if st.button("Recommend Crops / फसल की सिफारिश करें"):
-                prediction = recommend_crops_with_model(model, [pH, nitrogen, phosphorus, potassium, organic_matter])
-                st.write(f"Recommended Crop: {prediction} / अनुशंसित फसल: {prediction}")
+            model = load_crop_recommendation_model()
+            if model:
+                st.write("Enter soil data to get crop recommendations:")
+                pH = st.number_input("pH level", min_value=0.0, max_value=14.0, value=7.0)
+                nitrogen = st.number_input("Nitrogen Content (kg/ha)", min_value=0.0, value=20.0)
+                phosphorus = st.number_input("Phosphorus Content (kg/ha)", min_value=0.0, value=15.0)
+                potassium = st.number_input("Potassium Content (kg/ha)", min_value=0.0, value=15.0)
+                organic_matter = st.number_input("Organic Matter (%)", min_value=0.0, max_value=100.0, value=5.0)
+                
+                soil_data_row = [pH, nitrogen, phosphorus, potassium, organic_matter]
+                recommended_crop = recommend_crops_with_model(model, soil_data_row)
+                st.write(f"Recommended Crop: {recommended_crop}")
 
-    elif selection == "Irrigation Management / सिंचाई प्रबंधन":
-        weather_city = st.text_input("Enter city name for weather forecast / मौसम पूर्वानुमान के लिए शहर का नाम दर्ज करें")
-        soil_moisture = st.number_input("Enter current soil moisture (%) / वर्तमान मिट्टी की नमी (%) दर्ज करें")
+    elif choice == "Irrigation Management":
+        st.subheader("Irrigation Management")
+        city = st.text_input("Enter city name", "London")
+        soil_moisture = st.number_input("Current soil moisture (%)", min_value=0.0, max_value=100.0, value=30.0)
+        if st.button("Manage Irrigation"):
+            weather_data1 = get_weather_data(city)
+            irrigation_management(weather_data1, soil_moisture)
+
+    elif choice == "Crop Health Monitoring":
+        st.subheader("Crop Health Monitoring")
         
-        if st.button("Manage Irrigation / सिंचाई प्रबंधन"):
-            if weather_city:
-                weather_data = get_weather_data(weather_city)
-                irrigation_management(weather_data, soil_moisture)
+        uploaded_file = st.file_uploader("Upload a crop image", type=["jpg", "jpeg", "png"])
+        
+        if uploaded_file is not None:
+            file_path = os.path.join("uploaded_images", uploaded_file.name)
+            os.makedirs("uploaded_images", exist_ok=True)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.image(file_path, caption="Uploaded Image", use_column_width=True)
+        
+        uploaded_images = [f for f in os.listdir("uploaded_images") if f.endswith(('jpg', 'jpeg', 'png'))]
+        selected_image = st.selectbox("Select an image for crop health monitoring", uploaded_images)
+        
+        if selected_image:
+            st.write(f"Selected image: {selected_image}")
+        
+        if st.button("Train Placeholder Model"):
+            model = train_placeholder_model()
+            st.write("Placeholder model trained and saved as 'crop_health_model.h5'")
+        
+        model = None
+        if os.path.isfile('crop_health_model.h5'):
+            model = load_model('crop_health_model.h5')
+            st.write("Model loaded successfully.")
+        else:
+            st.write("Model file not found. Please train the model first.")
+        
+        if st.button("Monitor Crop Health"):
+            if model:
+                if selected_image:
+                    image_path = os.path.join("uploaded_images", selected_image)
+                    health_status = predict_crop_health(model, image_path)
+                    if health_status:
+                        st.write(f"Crop Health Status: {health_status}")
+                else:
+                    st.write("No image selected. Please select an image to monitor crop health.")
             else:
-                st.write("Please enter a city name. / कृपया एक शहर का नाम दर्ज करें।")
-
-    elif selection == "Crop Health Monitoring / फसल स्वास्थ्य निगरानी":
-        uploaded_file = st.file_uploader("Choose an image of the crop / फसल की छवि चुनें", type=["jpg", "jpeg", "png"])
-        
-        if uploaded_file:
-            image = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-            image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-            cnn_model = load_cnn_model()
-            if cnn_model:
-                prediction = predict_crop_health(cnn_model, image)
-                st.write(f"Prediction: {prediction} / भविष्यवाणी: {prediction}")
-
-    elif selection == "Article Advice / लेख सलाह":
-        article_headings = ['Pest Infestation / कीटों का संक्रमण', 'Nutrient Deficiency / पोषक तत्वों की कमी', 
-                            'Watering Issues / पानी की समस्याएँ', 'Soil Quality / मिट्टी की गुणवत्ता', 
-                            'Crop Diseases / फसल की बीमारियाँ']
-        
-        heading = st.selectbox("Select an article heading / लेख शीर्षक चुनें", article_headings)
-        if st.button("Get Advice / सलाह प्राप्त करें"):
-            advice = get_advice_for_heading(heading)
-            st.write(advice)
+                st.write("No model loaded. Please train or provide a model.")
 
 if __name__ == "__main__":
     main()
